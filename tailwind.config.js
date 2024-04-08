@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+
+const shadowOpacity = 0.6;
+const pixelSize = 12; // Variable for pixel size
+
 module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -7,12 +11,18 @@ module.exports = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      fontFamily: {
+        helvetica: ['helvetica', 'sans-serif'],
+        cascadia: ['cascadia', 'sans-serif'],
+      },
+      boxShadow: {
+        'bottomshadow': `0px ${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'rightshadow': `${pixelSize}px 0px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'centeredshadow': `0 0 ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide')
+  ],
 };
