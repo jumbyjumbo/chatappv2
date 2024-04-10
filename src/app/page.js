@@ -22,8 +22,6 @@ export default function Home() {
   const messageInputRef = useRef(null);
 
 
-
-
   // Function to handle Google sign-in + store them in firestore
   const handleGoogleSignIn = async () => {
     try {
@@ -170,6 +168,7 @@ export default function Home() {
     }
   };
 
+
   // stream current chat's messages to currentChatMessages
   useEffect(() => {
     if (!currentChat) return;
@@ -225,44 +224,42 @@ export default function Home() {
   }, [auth.currentUser]); // Re-run when the user logs in/out
 
 
-
   // Function to handle sending a message
   const handleSendMessage = async () => {
     const messageText = messageInput.trim();
+    if (messageText === "") return; // Don't send empty messages
+
     setMessageInput(""); // Clear the input field
     adjustTextAreaHeight(messageInputRef.current); // Reset the input height
-    if (messageText.trim() === "") return; // Don't send empty messages
 
-    // send msg to current chat || create new chat and send msg
     try {
-      // Check if there's no current chat selected or created yet
-      if (!currentChat) {
-        // Create a new chat document in the "chats" collection
-        const chatRef = await addDoc(collection(db, "chats"), {
-          members: [auth.currentUser.uid], // add current user as a member
-        });
-        setCurrentChat(chatRef.id); // Set new chat to current chat
+      let chatId = currentChat;
 
-        // send msg to the new chat
-        const messagesRef = collection(db, "chats", chatRef.id, "messages");
-        await addDoc(messagesRef, {
-          content: messageText,
-          timestamp: new Date(),
-          sender: auth.currentUser.uid,
+      // If there's no current chat, create a new chat
+      if (!chatId) {
+        const chatRef = await addDoc(collection(db, "chats"), {
+          members: [auth.currentUser.uid], // Initially, add current user as a member
         });
-      } else if (currentChat) {
-        // send msg to the current chat
-        const messagesRef = collection(db, "chats", currentChat, "messages");
-        await addDoc(messagesRef, {
-          content: messageText,
-          timestamp: new Date(),
-          sender: auth.currentUser.uid,
-        });
-        // Update the last message timestamp of the current chat
-        await setDoc(doc(db, "chats", currentChat), {
-          lastMessageTimestamp: new Date(),
-        }, { merge: true });
+        chatId = chatRef.id; // Set the newly created chat ID
+        setCurrentChat(chatId); // Update the current chat context
       }
+
+      // Timestamp for the message and the last message in chat
+      const timestamp = new Date();
+
+      // Send message to the chat
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      await addDoc(messagesRef, {
+        content: messageText,
+        timestamp: timestamp,
+        sender: auth.currentUser.uid,
+      });
+
+      // Update the chat's lastMessageTimestamp
+      await setDoc(doc(db, "chats", chatId), {
+        lastMessageTimestamp: timestamp,
+      }, { merge: true });
+
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -273,7 +270,6 @@ export default function Home() {
       handleSendMessage(); // Call your send message function
     }
   };
-
 
 
 
@@ -323,19 +319,19 @@ export default function Home() {
           {/* chats list section */}
           <div className='select-none z-20 relative h-full bg-[#111] shadow-rightshadow'>
             {/* search bar */}
-            <div className='absolute w-full px-[32px] py-[24px]'>
+            <div className='absolute w-full px-[24px] py-[12px]'>
               <input
-                placeholder="Search ..."
+                placeholder="Search"
                 type='text'
-                className='cursor-pointer px-[32px] py-[16px] w-full bg-black bg-opacity-40 backdrop-blur-xl outline-none shadow-bottomshadow' />
+                className='cursor-pointer px-[24px] py-[12px] w-full bg-black bg-opacity-40 backdrop-blur-xl outline-none shadow-bottomshadow' />
             </div>
             {/* chats list */}
-            <div className='pt-[108px] flex flex-col h-full overflow-y-scroll scrollbar-hide font-helvetica uppercase'>
+            <div className='pt-[80px] flex flex-col h-full overflow-y-scroll scrollbar-hide font-helvetica uppercase'>
               {userChats.map((chat) => (
                 <div
                   onClick={() => setCurrentChat(chat.id)}
                   key={chat.id}
-                  className="cursor-pointer py-[34px] border-black border-b-2 w-full flex items-center justify-center"
+                  className="cursor-pointer py-[16px] border-black border-b-[1px] w-full flex items-center justify-center"
                 >
                   {chat.id}
                 </div>
@@ -345,22 +341,22 @@ export default function Home() {
           {/* on going chat */}
           <div className='relative h-full w-full'>
             {/* navbar */}
-            <div className='select-none absolute w-full px-[48px] py-[24px] font-helvetica uppercase text-6xl flex flex-row justify-between items-center bg-[#0c0c0c] bg-opacity-70 backdrop-blur-lg shadow-bottomshadow'>
+            <div className='select-none absolute w-full px-[32px] py-[16px] font-helvetica uppercase text-4xl flex flex-row justify-between items-center bg-[#0c0c0c] bg-opacity-70 backdrop-blur-lg shadow-bottomshadow'>
               <div className='flex flex-row justify-center items-center'>
-                <img onClick={createNewChat} src="newchat.png" className="cursor-pointer h-[36px] w-[36px]"></img>
+                <img onClick={createNewChat} src="newchat.png" className="cursor-pointer h-[32px] w-[32px]"></img>
               </div>
               {/* glyphteck + menu */}
               <div className='flex flex-row justify-center items-center'>
                 <a href="https://glyphteck.com/" target="_blank" rel="noopener noreferrer" className="leading-none">glyphteck</a>
                 <div className='pr-[42px]'></div>
-                <img src={userPFP} alt="User Profile" className="cursor-pointer rounded-full w-[64px] h-[64px]" onClick={handleLogout} />
+                <img src={userPFP} alt="User Profile" className="cursor-pointer rounded-full w-[48px] h-[48px]" onClick={handleLogout} />
               </div>
             </div>
             {/* messages */}
-            <div className='pt-[124px] pb-[152px] bg-[#1b1b1b] flex flex-col h-full w-full overflow-y-scroll scrollbar-hide'>
+            <div className='pt-[90px] pb-[152px] bg-[#1b1b1b] flex flex-col h-full w-full overflow-y-scroll scrollbar-hide'>
               {/* messages */}
               {currentChatMessages.map((message, i) => (
-                <div key={i} className="px-8 py-6 border-black border-b-2 flex flex-row">
+                <div key={i} className="px-8 py-6 border-black border-b-[1px] flex flex-row">
                   {message.sender === auth.currentUser.uid ? (
                     <div className="w-1/2"></div> // This empty div pushes the message to the right half if it's from the current user
                   ) : null}
@@ -375,14 +371,14 @@ export default function Home() {
             </div>
             {/* input */}
             <div className='z-40 absolute bottom-[48px] left-1/2 transform -translate-x-1/2 w-full flex justify-center items-center'>
-              <div className='px-[32px] py-[16px] w-[70%] bg-black bg-opacity-40 backdrop-blur-xl shadow-bottomshadow flex items-center justify-center'>
+              <div className='px-[24px] py-[12px] w-[70%] bg-black bg-opacity-40 backdrop-blur-xl shadow-bottomshadow flex items-center justify-center'>
                 <textarea
                   rows="1"
                   ref={messageInputRef}
                   onKeyDown={handleKeyDown}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder="Message..."
                   type='text'
                   className='w-full bg-transparent overflow-hidden resize-none cursor-pointer rounded-md outline-none scrollbar-hide' />
               </div>

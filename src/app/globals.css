@@ -22,11 +22,3 @@ input:-webkit-autofill {
 input:-webkit-autofill:focus {
   -webkit-text-fill-color: white;
 }
-
-.material-symbols-outlined {
-  font-variation-settings:
-  'FILL' 0,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 24
-}
